@@ -9,11 +9,11 @@ vi.mock("../src/llm/raw.js", () => ({ requestRawJSON: vi.fn() }));
 // without a database or API.
 vi.mock("../src/db/queries.js", () => ({
   countFactsForRawItem: vi.fn(),
-  findOrCreateEntity: vi.fn(),
   insertFactRows: vi.fn(),
   listRawItems: vi.fn(),
   predicateBreakdown: vi.fn(),
 }));
+vi.mock("../src/entities/resolve.js", () => ({ resolveEntity: vi.fn() }));
 vi.mock("../src/extract/index.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/extract/index.js")>();
   return { ...actual, extractFactsFromItem: vi.fn() };
@@ -27,6 +27,7 @@ import { requestRawJSON } from "../src/llm/raw.js";
 import { completeJSON, ExtractionError } from "../src/llm/provider.js";
 import { extractFactsFromItem } from "../src/extract/index.js";
 import * as queries from "../src/db/queries.js";
+import { resolveEntity } from "../src/entities/resolve.js";
 import { embedBatch } from "../src/embed/embed.js";
 import { ingestRawItem } from "../src/ingest/index.js";
 
@@ -139,7 +140,10 @@ describe("ingestRawItem (idempotency)", () => {
         makeFact("runway:months", "hallucinated quote not in body"),
       ],
     });
-    vi.mocked(queries.findOrCreateEntity).mockResolvedValue("ent-1");
+    vi.mocked(resolveEntity).mockResolvedValue({
+      entity_id: "ent-1",
+      status: "created",
+    });
     vi.mocked(embedBatch).mockResolvedValue([[0.1, 0.2, 0.3]]);
     vi.mocked(queries.insertFactRows).mockResolvedValue(1);
 
