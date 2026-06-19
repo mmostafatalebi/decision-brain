@@ -1,0 +1,8 @@
+node_modules/
+.env
+dist/
+coverage/
+
+# OS / editor noise
+.DS_Store
+*.log
