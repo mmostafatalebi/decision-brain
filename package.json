@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "tsx src/mcp/server.ts",
     "seed": "tsx src/seed.ts",
+    "ingest": "tsx src/ingest/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "typecheck": "tsc --noEmit",
@@ -23,7 +24,8 @@
     "openai": "^4.70.0",
     "pg": "^8.13.0",
     "pgvector": "^0.2.0",
-    "zod": "^3.23.0"
+    "zod": "^3.23.0",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
