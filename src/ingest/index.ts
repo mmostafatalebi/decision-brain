@@ -2,11 +2,11 @@ import { pathToFileURL } from "node:url";
 import { pool } from "../db/client.js";
 import {
   countFactsForRawItem,
-  findOrCreateEntity,
   insertFactRows,
   listRawItems,
   predicateBreakdown,
 } from "../db/queries.js";
+import { resolveEntity, type EntityType } from "../entities/resolve.js";
 import { extractFactsFromItem, type RawItemInput } from "../extract/index.js";
 import { verifyVerbatimQuotes } from "../extract/verify.js";
 import { embedBatch } from "../embed/embed.js";
@@ -69,12 +69,15 @@ export async function ingestRawItem(item: IngestItem): Promise<ItemResult> {
     };
   }
 
-  // Resolve subjects sequentially so repeats within one item dedupe.
+  // Resolve subjects to canonical entities (created with embeddings, deduped).
   const subjectIds: string[] = [];
   for (const fact of valid) {
-    subjectIds.push(
-      await findOrCreateEntity(fact.subject.type, fact.subject.name),
-    );
+    const resolved = await resolveEntity({
+      type: fact.subject.type as EntityType,
+      name: fact.subject.name,
+      attributes: fact.subject.attributes,
+    });
+    subjectIds.push(resolved.entity_id);
   }
 
   // One embedding API call for all of this item's facts.

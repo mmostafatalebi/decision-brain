@@ -1,7 +1,6 @@
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./client.js";
 import {
-  entities,
   facts,
   rawItems,
   type NewFact,
@@ -20,30 +19,6 @@ export async function countFactsForRawItem(rawItemId: string): Promise<number> {
     .from(facts)
     .where(eq(facts.rawItemId, rawItemId));
   return rows[0]?.c ?? 0;
-}
-
-/**
- * Placeholder entity resolution for Phase 3: look up by exact (type,
- * canonical_name); insert a bare entity (no embedding) if absent. Phase 4 will
- * replace this with real similarity-based resolution and dedupe.
- */
-export async function findOrCreateEntity(
-  type: string,
-  name: string,
-): Promise<string> {
-  const existing = await db
-    .select({ id: entities.id })
-    .from(entities)
-    .where(and(eq(entities.type, type), eq(entities.canonicalName, name)))
-    .limit(1);
-  if (existing[0]) return existing[0].id;
-
-  const inserted = await db
-    .insert(entities)
-    .values({ type, canonicalName: name })
-    .returning({ id: entities.id });
-  // returning always yields a row on a successful insert.
-  return inserted[0]!.id;
 }
 
 /** Insert all facts for one raw item atomically; returns the inserted count. */
