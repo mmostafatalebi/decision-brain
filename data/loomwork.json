@@ -1,0 +1,181 @@
+[
+  {
+    "source_ref": "call/acme-eval",
+    "source_type": "call",
+    "valid_at": "2026-06-15T16:00:00Z",
+    "metadata": {
+      "participants": [
+        "Maya Chen",
+        "Jordan Rivera"
+      ],
+      "account": "Acme Freight",
+      "contact_title": "VP Operations",
+      "channel": "zoom",
+      "stage": "evaluation"
+    },
+    "body": "Maya: Thanks for making time, Jordan. Last we spoke your team was running the pilot on two lanes — how's it holding up?\n\nJordan: Honestly? The product's good. My dispatchers stopped fighting it after week one, which never happens. The copilot caught a double-booking last Tuesday that would've cost us a truck for a day. So I want to be clear — the blocker isn't the product.\n\nMaya: I appreciate that. So what is the blocker?\n\nJordan: Budget. We can't get budget approved mid-cycle. Our fiscal planning locked in February and there's no line item for this. If it were under $10k we wouldn't even need sign-off — I could expense it out of the ops discretionary pool and nobody blinks. But you're quoting me a number that goes to the CFO, and the CFO isn't reopening the budget until the next cycle.\n\nMaya: What does the next cycle look like, timing-wise?\n\nJordan: Planning starts in October for the new year. So if I want this funded properly, I'm pitching it in the fall and it goes live January at the earliest.\n\nMaya: That's a long way out. Is there a version of this that fits under the threshold you mentioned?\n\nJordan: Maybe a single-lane deployment? I'd have to see the pricing. And look, I'll be straight with you — we're also kicking the tires on FreightPilot. They came in cheaper out of the gate. Your product is better, I think, but \"better\" doesn't move my finance team. Price and timing do.\n\nMaya: Understood. Let me see what we can structure that lands under ten and gets you to a yes without the CFO."
+  },
+  {
+    "source_ref": "call/brightway",
+    "source_type": "call",
+    "valid_at": "2026-06-16T14:30:00Z",
+    "metadata": {
+      "participants": [
+        "Priya Nair",
+        "Marcus Tan"
+      ],
+      "account": "Brightway Logistics",
+      "contact_title": "Director of Operations",
+      "channel": "zoom",
+      "stage": "negotiation"
+    },
+    "body": "Priya: So where does this sit on your side, Marcus? You'd mentioned wanting the rest of the dispatch team on before peak season.\n\nMarcus: Yeah, the team loves it. That part's done — I don't need convincing on value. The problem is purely how we buy things here.\n\nPriya: Walk me through that.\n\nMarcus: Okay. Honestly, anything over $20k goes to procurement, which means another month, minimum, of forms and a \"preferred vendor\" review before a PO ever gets cut. Under that line I have signing authority and we'd be live next week. Over it, I'm in a queue.\n\nPriya: So it's a budget-authority thing, not a budget thing.\n\nMarcus: Right. The money exists. The authority to spend it quickly doesn't, not at the number we're discussing. If you came in under twenty I sign today. And just so you have the full picture — we've got FreightPilot already sitting in that procurement queue from an event last quarter, so they've got a head start on the paperwork even though we haven't actually tried their product.\n\nPriya: That's useful to know. Let me take the tiering back to Maya and see whether we can scope a first phase that keeps you under the procurement threshold.\n\nMarcus: Do that. Keep me under twenty and this is easy. Push me over it and I can't promise you anything before Q4."
+  },
+  {
+    "source_ref": "call/delta-logix",
+    "source_type": "call",
+    "valid_at": "2026-06-17T18:00:00Z",
+    "metadata": {
+      "participants": [
+        "Maya Chen",
+        "Renee Okafor"
+      ],
+      "account": "Delta-Logix",
+      "contact_title": "VP Supply Chain",
+      "channel": "zoom",
+      "stage": "discovery"
+    },
+    "body": "Maya: Renee, thanks for the discovery time. From the intake it sounds like reliability on exception handling is the big driver for you?\n\nRenee: It is. Your demo last week was genuinely impressive — the exception routing is exactly the gap we have. I'll save you the suspense: I want this. But I have to manage your expectations on how it actually gets bought here, because I don't want to waste your quarter.\n\nMaya: I'd rather hear it straight, so please.\n\nRenee: Look, my hands are tied. I'd need VP sign-off above me — and we're frozen. There's a spend freeze on anything new until Q1, full stop. Came down from the CFO in April after we missed a quarter. It doesn't matter how good the ROI story is. New vendor, new line item, it's dead on arrival until the freeze lifts.\n\nMaya: Is there any discretionary budget that sits outside the freeze?\n\nRenee: Not for software. Maybe a \"consulting pilot\" if I get creative, but I'm not going to build my whole case on a loophole. The honest answer is the budget authority isn't mine and won't be until the new fiscal year.\n\nMaya: I appreciate you not stringing it along.\n\nRenee: I'd rather be useful. Keep me warm, send me the case studies — especially anything with hard numbers, because that's what I'll need to fight for this in January. And just so you know, FreightPilot pinged us during the freeze too and got the same answer. Nobody's buying anything here until Q1, no matter the logo."
+  },
+  {
+    "source_ref": "call/board-q2",
+    "source_type": "call",
+    "valid_at": "2026-06-16T22:00:00Z",
+    "metadata": {
+      "participants": [
+        "Maya Chen",
+        "Devin Park"
+      ],
+      "contact_title": "CTO",
+      "channel": "internal",
+      "purpose": "board prep"
+    },
+    "body": "Maya: Before I send the deck, I want us aligned on the runway number. I've been saying eighteen months.\n\nDevin: Eighteen is the number if we freeze the org where it is today. The second we execute the sales plan — the two AEs Priya wants, plus the ramp budget — it's not eighteen anymore.\n\nMaya: How not-eighteen are we talking?\n\nDevin: I ran it twice. With the two AE hires loaded fully — comp, ramp, the tooling that follows them — real runway is closer to nine months. Maybe ten if they close fast enough to offset, but I wouldn't put ten in front of the board. Nine is the honest planning number once those hires are in.\n\nMaya: So the eighteen I've been quoting Northpeak is the do-nothing number.\n\nDevin: Right. Eighteen is \"current burn, no new hires.\" Nine is \"we actually run the plan we just told them we're running.\" Those are two different companies, and we keep quoting the first one while budgeting for the second.\n\nMaya: That's the thing I can't have blow up in an investor update. If I say eighteen and then we hire and burn through it, that's a credibility hit.\n\nDevin: Then say both. Give them eighteen at current burn and be explicit that funding the AE plan pulls it to nine. Let them decide which world they're funding. I'll put the math in the board note so it's not just vibes.\n\nMaya: Do that. I want the conditional spelled out in writing before Thursday."
+  },
+  {
+    "source_ref": "call/northpeak-checkin",
+    "source_type": "call",
+    "valid_at": "2026-06-15T20:00:00Z",
+    "metadata": {
+      "participants": [
+        "Maya Chen",
+        "Alan Whitfield"
+      ],
+      "firm": "Northpeak",
+      "contact_title": "Partner",
+      "channel": "phone",
+      "purpose": "investor check-in"
+    },
+    "body": "Alan: Good month on logos. Before the formal update, I wanted your read on something the data's showing us. Your average contract value is creeping up — the newer logos are bigger and slower than the early ones.\n\nMaya: We've noticed it too. The deals we're winning lately skew larger. Longer cycles, procurement involved, but the contracts are two, three times the size of the self-serve accounts we started with.\n\nAlan: So is the company moving upmarket, intentionally, or is that just where the revenue happened to come from this quarter?\n\nMaya: Honestly it's been pull more than push. The bigger logistics operators have the budget and the pain. But I'd be lying if I said we weren't leaning into it — Priya's whole AE plan is built around chasing those larger accounts.\n\nAlan: I think that's the right instinct, for what it's worth. The self-serve motion is a nice top of funnel, but the enterprise-shaped deals are where the durable revenue is. I'd just want the next update to be honest about it — if the ICP is shifting, say so. Don't let the board keep thinking we're a pure mid-market self-serve play when the dollars are coming from somewhere else.\n\nMaya: That's fair. I'll make the positioning explicit in the May update.\n\nAlan: Good. Investors forgive a pivot. They don't forgive finding out about one late."
+  },
+  {
+    "source_ref": "email/northpeak-update-may",
+    "source_type": "email",
+    "valid_at": "2026-06-02T09:00:00Z",
+    "metadata": {
+      "from": "Maya Chen",
+      "to": [
+        "investors@list"
+      ],
+      "subject": "Loomwork — May Investor Update",
+      "channel": "email"
+    },
+    "body": "Subject: Loomwork — May Investor Update\n\nHi all,\n\nQuick May recap. Net new ARR was our best month since the raise, and the pipeline finally feels like it has weight to it rather than noise.\n\nThe headline: we're moving upmarket. The deals closing now are larger logistics operators — enterprise accounts with real procurement processes — and they're landing at 2-3x the contract value of the self-serve customers we started with. It's a deliberate shift; Priya is rebuilding the sales motion around landing and expanding these bigger enterprise logos rather than the high-volume small accounts that got us here.\n\nA few numbers:\n- New ARR: $310k (best month post-Series-A)\n- Logos added: 4, including two we'd call enterprise-tier\n- Gross retention holding at 94%\n- Runway ~18 months at current burn\n\nOn hiring: we're bringing on two account executives this quarter to feed the upmarket motion. For transparency, fully loading those hires changes the runway math, and I'll have a precise figure in the board materials — but at today's burn we're sitting comfortably around eighteen months.\n\nRisks I'm watching: sales cycles are getting longer as we move up, and we're seeing FreightPilot show up earlier in procurement-led deals. More on both at the board meeting.\n\nAs always — reply with questions, and intros to logistics operators are always welcome.\n\nMaya"
+  },
+  {
+    "source_ref": "email/atlas-touch-base",
+    "source_type": "email",
+    "valid_at": "2026-06-10T15:00:00Z",
+    "metadata": {
+      "from": "Dana Liu",
+      "firm": "Atlas Ventures",
+      "to": [
+        "Maya Chen"
+      ],
+      "subject": "checking in + a couple intros",
+      "channel": "email"
+    },
+    "body": "Subject: checking in + a couple intros\n\nMaya —\n\nSaw the May numbers come through the update list — $310k new ARR is a great month, congrats to you and the team. The move toward larger accounts tracks with what we talked about at the seed round; you always said the mid-market would be a wedge, not the destination.\n\nTwo things:\n\n1) We've got a portfolio company (3PL software, adjacent not competitive) whose VP Sales came out of exactly the kind of enterprise logistics accounts you're chasing now. Worth an intro? He's seen the procurement gauntlet from the inside and might save your AEs some scar tissue.\n\n2) Selfishly — when you do your A extension or B, Atlas wants to keep our pro-rata. No pressure and no rush, just flagging it early so it's not a scramble later.\n\nRooting for you. Let me know on the intro.\n\n— Dana\nAtlas Ventures"
+  },
+  {
+    "source_ref": "email/sam-vora-angel",
+    "source_type": "email",
+    "valid_at": "2026-06-13T11:00:00Z",
+    "metadata": {
+      "from": "Sam Vora",
+      "role": "angel investor",
+      "to": [
+        "Maya Chen"
+      ],
+      "subject": "heard a rumor",
+      "channel": "email"
+    },
+    "body": "Subject: heard a rumor\n\nMaya,\n\nHeard through the grapevine that you're starting to think about the next round — someone at a dinner said Loomwork was \"testing the market.\" True, exaggerated, or completely made up?\n\nAsking for two reasons. One, if it's true, I want in again — small check, same as last time, but I'd be annoyed to read about it in a deal memo instead of from you. Two, if it's not true and people are saying it anyway, that's its own signal worth knowing about; rumors like that move on their own.\n\nEither way — how's runway looking? Last I heard you had well over a year, but \"well over a year\" means different things depending on whose burn assumptions you use. If you're raising into strength, great. If you're raising because the eighteen-month number has a nine-month asterisk on it, I'd rather know the real shape of it before I wire anything.\n\nNo agenda. Just an old angel who likes the company and hates surprises.\n\nSam"
+  },
+  {
+    "source_ref": "note/board-q2",
+    "source_type": "note",
+    "valid_at": "2026-06-17T08:00:00Z",
+    "metadata": {
+      "author": "Devin Park",
+      "title": "CTO",
+      "audience": "board prep (internal)"
+    },
+    "body": "Board note — runway, ahead of Thursday. — DP\n\nPutting this in writing because we keep saying two different numbers in two different rooms.\n\nCurrent burn, no new hires: ~18 months. That's the number in Maya's investor update and it's technically true today.\n\nBut we are not staying static — the plan we're presenting Thursday *is* the AE hiring plan. Once you load the two AEs (full comp + ramp + the ~$4k/mo of tooling and travel that follows them), the picture is closer to 9 months once we hire the two AEs. Call it 9-10 if they ramp fast, but I'm not planning on the optimistic case.\n\nSo the honest framing for the board:\n- 18 months = do nothing\n- ~9 months = fund and execute the sales plan we're asking them to fund\n\nThese are conditional on the same decision. We can't quote 18 as the runway while simultaneously asking to approve the spend that takes it to 9. Pick a lane in the deck.\n\nMy recommendation: present both explicitly, anchor on 9 as the planning number, and frame the raise timeline against 9 — not 18. If we plan against 18 and live in 9, we start the next raise three months too late.\n\nFlagging early so it's not a surprise in the room. — Devin"
+  },
+  {
+    "source_ref": "note/icp-draft",
+    "source_type": "note",
+    "valid_at": "2026-06-11T19:00:00Z",
+    "metadata": {
+      "author": "Maya Chen",
+      "title": "ICP one-pager (DRAFT)",
+      "status": "not for circulation"
+    },
+    "body": "ICP one-pager — DRAFT, not for circulation yet. — MC\n\nWho we're actually for (working definition):\n\nPrimary: mid-market logistics operators, 50-500 trucks or equivalent, dispatch teams of 5-30, currently duct-taping spreadsheets and a TMS that doesn't talk to anything. This is where we win fastest and where the product fits without services.\n\nWhere the money is trending: bigger operators. The last quarter of closes skewed larger and slower — more seats, more procurement, longer cycles, but materially bigger contracts. Part of me wants to chase that. Part of me worries we lose the self-serve simplicity that made the early customers love us.\n\nThe question I keep avoiding: are we a mid-market self-serve product that occasionally lands a big logo, or an enterprise logistics platform that started in mid-market? Those imply different roadmaps, different pricing, different sales orgs. I don't think we've actually decided — we've just been following the revenue.\n\nTODO before this is shareable:\n- pin the segment, stop hedging\n- reconcile with what I'm telling Northpeak (I've been saying \"upmarket\" to Alan and \"mid-market self-serve\" on Twitter — can't be both in public)\n- get Priya's input on where the AE plan actually points"
+  },
+  {
+    "source_ref": "tweet/maya-0612",
+    "source_type": "tweet",
+    "valid_at": "2026-06-12T17:30:00Z",
+    "metadata": {
+      "author": "Maya Chen",
+      "handle": "@mayachen",
+      "channel": "twitter"
+    },
+    "body": "shipped: one-click lane onboarding. import your routes and the copilot starts flagging exceptions in minutes — no implementation call, no services SOW. this is what building for mid-market self-serve actually means. your dispatchers shouldn't need a consultant to get value. 🚚"
+  },
+  {
+    "source_ref": "tweet/maya-0608",
+    "source_type": "tweet",
+    "valid_at": "2026-06-08T15:00:00Z",
+    "metadata": {
+      "author": "Maya Chen",
+      "handle": "@mayachen",
+      "channel": "twitter"
+    },
+    "body": "hot take: most \"AI for logistics\" is a dashboard with a chatbot bolted on. the win isn't asking the AI a question — it's the copilot catching the double-booked truck at 2am before it becomes a 6am phone call. ops copilots should prevent fires, not summarize them after. 🔥"
+  },
+  {
+    "source_ref": "doc/pricing-page-change",
+    "source_type": "doc",
+    "valid_at": "2026-06-09T12:00:00Z",
+    "metadata": {
+      "author": "Maya Chen",
+      "doc": "pricing.loomwork.com",
+      "kind": "staging diff",
+      "status": "pending approval"
+    },
+    "body": "pricing.loomwork.com — change log (staging diff, pending Maya approval)\n\nREMOVED tier:\n- \"Starter — $99/mo, self-serve, up to 5 dispatchers\"\n\nADDED tiers:\n+ \"Team — $1,200/mo, up to 20 dispatchers, self-serve onboarding\"\n+ \"Scale — $4,500/mo, up to 75 dispatchers, priority support + SSO\"\n+ \"Enterprise — custom pricing, unlimited seats, SSO/SAML, dedicated CSM, procurement and security review supported\"\n\nCopy change on hero:\n- old: \"The self-serve ops copilot for growing logistics teams.\"\n+ new: \"The ops copilot for modern logistics operations — from growing teams to enterprise fleets.\"\n\nNote from Maya in the PR: \"Raising the floor. The $99 starter was attracting tire-kickers who never activated. But keep the self-serve path on Team — I don't want to lose the land motion while we chase bigger logos. The Enterprise tier with procurement support is new; we keep hitting that wall on calls.\""
+  }
+]
