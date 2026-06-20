@@ -29,7 +29,7 @@ function buildServer(): McpServer {
     "ask",
     {
       description:
-        "Ask the decision brain a CEO question. Retrieves cited facts, researches gaps, synthesizes a cited brief, and logs it as a PENDING decision (not yet approved).",
+        "Ask the decision brain a CEO-level question. Returns a cited brief plus a pending decision id — the brief is a recommendation only; nothing is recorded as decided until you call log_decision.",
       inputSchema: { question: z.string().min(1) },
     },
     async ({ question }) => {
@@ -42,7 +42,7 @@ function buildServer(): McpServer {
     "log_decision",
     {
       description:
-        "Record the human's approve/reject call on a pending decision. Append-only: a decision can be finalized exactly once.",
+        "Record your approval or rejection of a pending decision. A given decision_id can be finalized exactly once; replays return an error.",
       inputSchema: {
         decision_id: z.string().uuid(),
         human_decision: z.enum(["approved", "rejected"]),
@@ -58,7 +58,8 @@ function buildServer(): McpServer {
   server.registerTool(
     "query_facts",
     {
-      description: "Query typed facts by predicate prefix and/or subject name.",
+      description:
+        "Search the brain's memory for typed, evidence-tiered facts (read-only), optionally filtered by predicate or the subject they're about.",
       inputSchema: {
         predicate: z.string().optional(),
         subject: z.string().optional(),
@@ -71,7 +72,8 @@ function buildServer(): McpServer {
   server.registerTool(
     "query_entities",
     {
-      description: "Query canonical entities by type and/or name.",
+      description:
+        "Look up the canonical people, companies, and investors the brain knows about (read-only), optionally filtered by type or name.",
       inputSchema: {
         type: z.string().optional(),
         name: z.string().optional(),
@@ -83,7 +85,8 @@ function buildServer(): McpServer {
   server.registerTool(
     "query_signals",
     {
-      description: "Query aggregated signals by type and/or promotion status.",
+      description:
+        "Browse aggregated signals and where each sits on the promotion ladder (candidate → emerging → validated → decision_grade), optionally filtered by type or status.",
       inputSchema: {
         type: z.string().optional(),
         status: z.string().optional(),
@@ -96,7 +99,7 @@ function buildServer(): McpServer {
     "get_contradictions",
     {
       description:
-        "List detected contradictions. Optionally filter by whether they are resolved.",
+        "List the conflicting claims the brain has detected in memory, optionally filtered to just the resolved or unresolved ones.",
       inputSchema: { resolved: z.boolean().optional() },
     },
     async ({ resolved }) => json(await getContradictions({ resolved })),
@@ -106,7 +109,7 @@ function buildServer(): McpServer {
     "ingest_items",
     {
       description:
-        "Ingest new raw items (call/email/note/tweet/doc/research) into memory through the full extraction pipeline.",
+        "Feed new raw items (calls, emails, notes, tweets, docs) into the brain — this is the only way to write to memory, and each item runs through the full extraction pipeline.",
       inputSchema: {
         items: z
           .array(
