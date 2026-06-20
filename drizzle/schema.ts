@@ -10,6 +10,7 @@ import {
   timestamp,
   vector,
   index,
+  uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
@@ -134,7 +135,9 @@ export const contradictions = pgTable(
     resolution: jsonb("resolution").$type<Record<string, unknown>>(),
   },
   (t) => [
-    index("contradictions_pair_idx").on(t.factAId, t.factBId),
+    // Unique so contradiction detection can insert with ON CONFLICT DO NOTHING
+    // (canonical least/greatest ordering makes re-runs idempotent).
+    uniqueIndex("contradictions_pair_idx").on(t.factAId, t.factBId),
   ],
 );
 
