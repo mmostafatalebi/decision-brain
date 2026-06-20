@@ -1,5 +1,6 @@
 import {
   listSignals,
+  signalIdsWithUnresolvedContradictions,
   signalSourceMetrics,
   updateSignalStatus,
 } from "./store.js";
@@ -31,6 +32,8 @@ export interface PromotionMetrics {
   lastSeenAt: Date;
   distinctSources: number;
   maxTier: number;
+  /** Phase 6 gate: a signal with an unresolved contradiction can't reach decision_grade. */
+  hasContradiction: boolean;
   now: Date;
 }
 
@@ -46,9 +49,8 @@ export function eligibleRungIndex(m: PromotionMetrics): number {
     rung >= 2 &&
     m.evidenceCount >= 6 &&
     m.distinctSources >= 3 &&
-    m.maxTier >= 4
-    // NOTE: "no unresolved contradictions" is part of decision_grade but the
-    // contradictions table is populated in Phase 6 — deferred here.
+    m.maxTier >= 4 &&
+    !m.hasContradiction // Phase 6 gate
   ) {
     rung = 3; // decision_grade
   }
@@ -58,28 +60,39 @@ export function eligibleRungIndex(m: PromotionMetrics): number {
 export interface PromoteSummary {
   signalsEvaluated: number;
   promotions: { signal_id: string; from: string; to: string }[];
+  /** Signals already at decision_grade that now carry a contradiction (logged, NOT demoted). */
+  preservedAgainstDemotion: string[];
 }
 
 export async function promoteSignals(): Promise<PromoteSummary> {
   const sigs = await listSignals();
   const metrics = await signalSourceMetrics();
+  const contradicted = new Set(await signalIdsWithUnresolvedContradictions());
   const metricMap = new Map(metrics.map((m) => [m.signalId, m]));
   const now = new Date();
 
   const promotions: PromoteSummary["promotions"] = [];
+  const preservedAgainstDemotion: string[] = [];
 
   for (const s of sigs) {
     const m = metricMap.get(s.id) ?? { distinctSources: 0, maxTier: 0 };
+    const hasContradiction = contradicted.has(s.id);
     const eligible = eligibleRungIndex({
       evidenceCount: s.evidenceCount,
       lastSeenAt: s.lastSeenAt,
       distinctSources: m.distinctSources,
       maxTier: m.maxTier,
+      hasContradiction,
       now,
     });
 
     const current = rungIndex(s.status);
     const final = Math.max(current, eligible); // one-way: never below current
+
+    // Already decision_grade but now contradicted → preserve (one-way), just log.
+    if (s.status === "decision_grade" && hasContradiction) {
+      preservedAgainstDemotion.push(s.id);
+    }
 
     if (final > current) {
       const promotedAt = { ...s.promotedAt };
@@ -92,5 +105,5 @@ export async function promoteSignals(): Promise<PromoteSummary> {
     }
   }
 
-  return { signalsEvaluated: sigs.length, promotions };
+  return { signalsEvaluated: sigs.length, promotions, preservedAgainstDemotion };
 }

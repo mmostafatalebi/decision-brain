@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { facts, signals } from "../../drizzle/schema.js";
+import { contradictions, facts, signals } from "../../drizzle/schema.js";
 
 /**
  * Persistence layer for signal aggregation + promotion. Separated from the
@@ -130,6 +130,22 @@ export interface SignalSourceMetric {
   signalId: string;
   distinctSources: number;
   maxTier: number;
+}
+
+/**
+ * Signal ids that have ≥1 fact appearing in an UNRESOLVED contradiction — the
+ * input to the decision_grade promotion gate (Phase 6).
+ */
+export async function signalIdsWithUnresolvedContradictions(): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ id: signals.id })
+    .from(signals)
+    .innerJoin(
+      contradictions,
+      sql`(${contradictions.factAId} = ANY(${signals.factIds}) OR ${contradictions.factBId} = ANY(${signals.factIds}))`,
+    )
+    .where(isNull(contradictions.resolution));
+  return rows.map((r) => r.id);
 }
 
 /** distinct raw_item sources + max evidence tier per signal, via one join. */
