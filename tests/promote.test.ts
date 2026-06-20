@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("../src/signals/store.js", () => ({
   listSignals: vi.fn(),
   signalSourceMetrics: vi.fn(),
+  signalIdsWithUnresolvedContradictions: vi.fn(),
   updateSignalStatus: vi.fn(),
   // unused by promote but part of the module surface
   fetchSignalFacts: vi.fn(),
@@ -38,6 +39,7 @@ beforeEach(() => vi.clearAllMocks());
 async function run(sig: SignalRow, m: SignalSourceMetric) {
   vi.mocked(store.listSignals).mockResolvedValue([sig]);
   vi.mocked(store.signalSourceMetrics).mockResolvedValue([m]);
+  vi.mocked(store.signalIdsWithUnresolvedContradictions).mockResolvedValue([]);
   return promoteSignals();
 }
 
