@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "tsx src/mcp/server.ts",
+    "mcp": "tsx src/mcp/server.ts",
     "seed": "tsx src/seed.ts",
     "ingest": "tsx src/ingest/index.ts",
     "resolve": "tsx src/entities/index.ts",

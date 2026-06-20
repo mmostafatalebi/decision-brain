@@ -58,7 +58,7 @@ pnpm dev       # start the MCP server (stdio)
 
 | Script             | What it does                                  |
 | ------------------ | --------------------------------------------- |
-| `pnpm dev`         | Start the MCP server (stdio transport)        |
+| `pnpm dev` / `pnpm mcp` | Start the MCP server (stdio transport)   |
 | `pnpm seed`        | Ingest the fixture week                       |
 | `pnpm db:generate` | Generate a Drizzle migration from the schema  |
 | `pnpm db:migrate`  | Apply pending migrations                      |
@@ -71,3 +71,51 @@ Phase 1 — project skeleton: schema, DB client, env loader, runnable
 `seed`/`dev` placeholders. Business logic arrives in later phases.
 
 See [`DESIGN.md`](./DESIGN.md) for architecture notes.
+
+## Connecting to Claude Desktop
+
+The `decision-brain` MCP server exposes the brain to any MCP client over stdio.
+It offers seven tools: `ask` (cited brief + a pending decision), `log_decision`
+(approve/reject, append-only), the read-only queries `query_facts`,
+`query_entities`, `query_signals`, `get_contradictions`, and `ingest_items`
+(the only write path into memory).
+
+Add this to your `claude_desktop_config.json`, filling in the absolute paths and
+keys for your machine:
+
+```json
+{
+  "mcpServers": {
+    "decision-brain": {
+      "command": "/absolute/path/to/pnpm",
+      "args": ["tsx", "src/mcp/server.ts"],
+      "cwd": "/absolute/path/to/Decision Brain",
+      "env": {
+        "DATABASE_URL": "postgresql://USER@localhost:5432/decision_brain",
+        "ANTHROPIC_API_KEY": "sk-ant-...",
+        "OPENAI_API_KEY": "sk-...",
+        "TAVILY_API_KEY": "tvly-..."
+      }
+    }
+  }
+}
+```
+
+- **Where this file lives** — on macOS, Claude Desktop loads it from
+  `~/Library/Application Support/Claude/claude_desktop_config.json`. Create it if
+  it doesn't exist, then fully restart Claude Desktop.
+- **Tip** — find your pnpm path with `which pnpm`. If `tsx` isn't resolved, use
+  `["exec", "tsx", "src/mcp/server.ts"]` as the `args`.
+
+### Verifying the connection
+
+Open Claude Desktop and look for the tools (🔌) icon in the message box. Under
+**decision-brain** you should see all seven tools listed: `ask`, `log_decision`,
+`query_facts`, `query_entities`, `query_signals`, `get_contradictions`, and
+`ingest_items`.
+
+To test the server without Claude Desktop, run it directly — `pnpm mcp` (alias of
+`pnpm dev`) starts the same stdio server.
+
+> All read-path tools are pure SQL. The two LLM seams (extraction + synthesis)
+> live inside `ingest_items` and `ask` respectively.
