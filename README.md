@@ -1,76 +1,114 @@
 # Decision Brain
 
-A CEO decision brain for **Maya Chen, CEO of Loomwork**. It ingests a week of
-messy inputs (calls, emails, board notes, tweets, doc snippets), extracts typed
-and evidence-tiered facts, builds queryable bi-temporal memory with entity
-resolution and contradiction detection, then answers questions with **cited,
-confidence-scored** briefs — researching real gaps via web search and logging
-every recommendation to an append-only decision trail for a human to approve.
+Maya is scaling Loomwork. Her week is a pile of customer calls, board notes,
+investor emails, tweets, and internal docs — and buried in it are decisions she
+has to defend: what runway to put in front of investors, whether the ICP is
+still really mid-market, which objection is actually losing deals. Decision Brain
+reads that week, turns it into typed memory she can cite, and answers those
+questions with briefs that surface the contradictions, point every claim back to
+the exact source, and leave a record of what she decided.
 
-> **Design stance:** _"LLMs live at the seams. Algorithms live in the path."_
-> An LLM runs only at write-time (fact extraction) and at the final answer seam
-> (synthesis). Everything in between — retrieval, clustering, promotion, entity
-> resolution, contradiction detection — is deterministic.
+## What this is
 
-## Prerequisites
+The whole thing runs on one idea: I put the model at exactly two spots — turning
+each raw item into typed facts when it comes in, and turning retrieved facts into
+a cited brief when you ask a question. Everything else — retrieval, entity
+resolution, contradiction detection, signal aggregation, promotion, gap
+detection, citation validation, the decision log — is deterministic SQL and pure
+functions. So you can wipe the derived tables, rebuild them, and get the same
+memory back; every citation traces to a real source; and a question costs a
+known, bounded amount instead of fanning out into a pile of agent calls.
 
-- **Node.js 20+** (uses the native `process.loadEnvFile`, so no `dotenv`)
-- **pnpm**
-- **PostgreSQL 15+** with the [`pgvector`](https://github.com/pgvector/pgvector)
-  extension installed
-  - _(Verified locally against PostgreSQL 14 + pgvector 0.8.3 — everything we
-    rely on, `gen_random_uuid()` and `ivfflat`, works on 14 as well.)_
+Memory is three layers. **Learnings** are typed, evidence-tiered facts with the
+verbatim quote they came from. **Signals** are those facts aggregated and
+promoted along `candidate → emerging → validated → decision_grade`. **Decisions**
+are cited briefs you approve or reject, appended for keeps. You talk to it over an
+**MCP server (stdio)** — plug it into Claude Desktop or drive it from the CLI. And
+the line it won't cross: it recommends, it never acts. Every recommendation sits
+as a pending decision until a human finalizes it.
 
-### One-time database setup
+## Quick start
+
+Prerequisites: **Node 20+**, **pnpm**, **PostgreSQL 15+ with
+[pgvector](https://github.com/pgvector/pgvector)** (verified on 14 + pgvector
+0.8.3 too).
 
 ```bash
+# 1. Database + extensions
 createdb decision_brain
 psql -d decision_brain -c "CREATE EXTENSION IF NOT EXISTS vector;"
 psql -d decision_brain -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-```
 
-## Setup
-
-```bash
+# 2. Install + configure
 pnpm install
-cp .env.example .env      # then fill in your keys + DATABASE_URL
-pnpm db:migrate           # apply the schema
+cp .env.example .env          # fill in DATABASE_URL + ANTHROPIC / OPENAI / TAVILY keys
+
+# 3. Schema + build memory
+pnpm db:migrate               # apply the Drizzle schema
+pnpm refresh                  # seed → ingest → resolve → relations → signals → contradictions
+
+# 4. Ask a question
+pnpm ask "What runway can I defend in this week's investor update?"
 ```
+
+`pnpm refresh` chains the whole write pipeline: it seeds the fixture week,
+extracts typed facts (the first LLM seam), resolves entities, builds the
+relations graph, aggregates and promotes signals, and detects contradictions.
+After it runs, `pnpm ask "..."` answers questions against that memory.
 
 ### Environment variables (`.env`)
 
-| Key                 | Purpose                                              |
-| ------------------- | ---------------------------------------------------- |
-| `ANTHROPIC_API_KEY` | Claude — primary write-time extraction + synthesis   |
-| `OPENAI_API_KEY`    | Embeddings (`text-embedding-3-small`) + fallback LLM |
-| `TAVILY_API_KEY`    | Web research tool                                    |
-| `DATABASE_URL`      | Postgres connection string                           |
-| `LLM_PROVIDER`      | `anthropic` (default) or `openai`                    |
+| Key                 | Purpose                                                |
+| ------------------- | ------------------------------------------------------ |
+| `DATABASE_URL`      | Postgres connection string                             |
+| `ANTHROPIC_API_KEY` | Claude — write-time extraction + answer synthesis      |
+| `OPENAI_API_KEY`    | Embeddings (`text-embedding-3-small`) + fallback LLM   |
+| `TAVILY_API_KEY`    | Web research tool (fires only on contested gaps)       |
+| `LLM_PROVIDER`      | `anthropic` (default) or `openai`                      |
+| `ANTHROPIC_MODEL`   | optional model override (default `claude-opus-4-8`)    |
 
-## Run
+## Example: the three CEO questions
 
-```bash
-pnpm seed      # ingest the Loomwork fixture week into memory
-pnpm dev       # start the MCP server (stdio)
-```
+The brain is built to answer three questions end-to-end. Each runs the same
+pipeline (retrieve → detect gaps → research if contested → synthesize → validate
+citations → log pending), and each produces a different shape of answer:
 
-## Scripts
+- **"Is our ICP actually mid-market, or are we drifting up?"** — surfaces the
+  `enterprise` vs `mid-market` contradiction, citing both the tweet
+  (`mid-market self-serve`) and the Northpeak investor update (`moving
+  upmarket… enterprise accounts`); recommends picking one ICP statement for the
+  investor comms.
+- **"Which objection is killing deals — and is it real?"** — identifies
+  budget-authority across all three calls (Acme $10k, Brightway $20k, Delta
+  spend-freeze) with verbatim quotes, confirms it's real (product validated,
+  not the blocker), recommends a sub-threshold pricing pilot. *Does not trigger
+  research* — three consistent facts, no contradiction, the corpus answers it.
+- **"What runway can I defend in this week's investor update?"** — surfaces the
+  18-vs-9 contradiction (Northpeak email vs Devin's board note), *fires Tavily*
+  for a burn-rate benchmark (because the topic is contested), and recommends
+  presenting 18 months as the floor paired with ~9 months once the AE hires
+  load — with the dependency disclosed.
 
-| Script             | What it does                                  |
-| ------------------ | --------------------------------------------- |
-| `pnpm dev` / `pnpm mcp` | Start the MCP server (stdio transport)   |
-| `pnpm seed`        | Ingest the fixture week                       |
-| `pnpm db:generate` | Generate a Drizzle migration from the schema  |
-| `pnpm db:migrate`  | Apply pending migrations                      |
-| `pnpm typecheck`   | `tsc --noEmit`, strict                        |
-| `pnpm test`        | Run the Vitest suite                          |
+Every claim in every brief carries an inline `[F:uuid]` citation that resolves to
+a real fact with a verbatim quote. The architecture story behind each behavior is
+in [`DESIGN.md`](./DESIGN.md).
 
-## Status
+## Repository tour
 
-Phase 1 — project skeleton: schema, DB client, env loader, runnable
-`seed`/`dev` placeholders. Business logic arrives in later phases.
-
-See [`DESIGN.md`](./DESIGN.md) for architecture notes.
+| Path                     | What lives here                                              |
+| ------------------------ | ----------------------------------------------------------- |
+| `data/loomwork.json`     | The fixture week — 13 raw items with baked-in contradictions |
+| `drizzle/`               | Schema + migrations (7 tables, pgvector columns)            |
+| `src/ingest/`            | Content-addressed ingestion of raw items                    |
+| `src/extract/`           | LLM seam #1: typed-fact extraction + verbatim-quote gate    |
+| `src/entities/`          | Entity resolution (4-step) + deterministic relations graph  |
+| `src/signals/`           | Value-signature clustering + one-way promotion ladder       |
+| `src/contradictions/`    | Pairwise contradiction detection (typed-value comparison)   |
+| `src/answer/`            | Retrieval, gap detection, synthesis (LLM seam #2), citation gate |
+| `src/research/`          | Tavily client + fold-findings-as-cited-facts                |
+| `src/decisions/`         | Append-only decision log                                    |
+| `src/mcp/`               | MCP server (stdio) + the seven tools                        |
+| `src/cli/ask.ts`         | The ask → approve/reject CLI                                |
 
 ## Connecting to Claude Desktop
 
@@ -119,3 +157,28 @@ To test the server without Claude Desktop, run it directly — `pnpm mcp` (alias
 
 > All read-path tools are pure SQL. The two LLM seams (extraction + synthesis)
 > live inside `ingest_items` and `ask` respectively.
+
+## Tests
+
+```bash
+pnpm test        # 42 tests — mocked LLM + mocked Tavily, no live network calls
+pnpm typecheck   # tsc --noEmit, strict
+```
+
+The suite covers the seams and gates that matter: extraction + verbatim-quote
+verification, entity resolution, signal clustering + promotion thresholds,
+contradiction rules, and the answer pipeline's retrieval / gap-detection /
+citation-validation / append-only logging.
+
+## Architecture
+
+The long version is in [`DESIGN.md`](./DESIGN.md) — that's where I walk through
+every call I made, deviations from the brief included. If you only read two
+sections, read the one on signal aggregation (why I dropped pure embedding kNN
+for value-signature grouping) and the one on why `research_facts = 0` is the
+right answer and not a bug.
+
+## Built for
+
+I built this as a take-home for Builders Studio / VSI — thanks for a prompt that
+was genuinely fun to build against.
