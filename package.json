@@ -8,21 +8,24 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "tsx src/mcp/server.ts",
-    "mcp": "tsx src/mcp/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "seed": "tsx src/seed.ts",
+    "refresh": "pnpm seed && pnpm ingest && pnpm resolve && pnpm relations && pnpm signals && pnpm contradictions",
+
     "ingest": "tsx src/ingest/index.ts",
     "resolve": "tsx src/entities/index.ts",
     "relations": "tsx src/entities/relations.ts",
     "signals": "tsx src/signals/index.ts",
     "contradictions": "tsx src/contradictions/index.ts",
+
     "ask": "tsx src/cli/ask.ts",
     "cli": "tsx src/cli/ask.ts",
-    "refresh": "pnpm seed && pnpm ingest && pnpm resolve && pnpm relations && pnpm signals && pnpm contradictions",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "mcp": "tsx src/mcp/server.ts",
+    "dev": "tsx src/mcp/server.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
