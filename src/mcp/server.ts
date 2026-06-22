@@ -1,8 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { ask } from "../answer/index.js";
 import { finalizeDecision } from "../decisions/log.js";
+import { db } from "../db/client.js";
+import { users } from "../../drizzle/schema.js";
 import {
   getContradictions,
   ingestItems,
@@ -22,7 +25,7 @@ function json(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
 }
 
-function buildServer(): McpServer {
+function buildServer(mcpUserId: string, mcpUserEmail: string): McpServer {
   const server = new McpServer({ name: "decision-brain", version: "0.1.0" });
 
   server.registerTool(
@@ -50,8 +53,15 @@ function buildServer(): McpServer {
       },
     },
     async ({ decision_id, human_decision, note }) => {
-      await finalizeDecision(decision_id, human_decision, note);
-      return json({ decision_id, human_decision, note: note ?? null, status: "finalized" });
+      // The MCP server acts as the configured MCP_USER_EMAIL; role enforcement
+      // happens inside finalizeDecision (founder-only).
+      await finalizeDecision(decision_id, human_decision, mcpUserId, note);
+      return json({
+        decision_id,
+        human_decision,
+        finalized_by: mcpUserEmail,
+        status: "finalized",
+      });
     },
   );
 
@@ -138,11 +148,28 @@ function buildServer(): McpServer {
 }
 
 async function main(): Promise<void> {
-  const server = buildServer();
+  // The MCP server acts as one configured user when finalizing decisions.
+  // Resolve it once at startup so callers don't have to pass UUIDs.
+  const mcpUserEmail = process.env.MCP_USER_EMAIL ?? "maya@loomwork.local";
+  const userRows = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, mcpUserEmail))
+    .limit(1);
+  const mcpUser = userRows[0];
+  if (!mcpUser) {
+    throw new Error(
+      `MCP user not found: ${mcpUserEmail}. Run 'pnpm seed:users' first.`,
+    );
+  }
+
+  const server = buildServer(mcpUser.id, mcpUserEmail);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   // Logs go to stderr so they don't corrupt the stdio JSON-RPC channel.
-  console.error("MCP server starting... (decision-brain, stdio)");
+  console.error(
+    `MCP server starting... (decision-brain, stdio; acting as ${mcpUserEmail})`,
+  );
 }
 
 main().catch((err) => {
