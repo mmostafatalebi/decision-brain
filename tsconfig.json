@@ -27,6 +27,7 @@
     "dist",
     "coverage",
     "web",
-    "tests/web-auth.test.ts"
+    "tests/web-auth.test.ts",
+    "tests/rbac.test.ts"
   ]
 }
