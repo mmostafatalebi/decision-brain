@@ -3,6 +3,11 @@ node_modules/
 dist/
 coverage/
 
+# Next.js
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
 # OS / editor noise
 .DS_Store
 *.log

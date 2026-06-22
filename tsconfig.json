@@ -22,5 +22,11 @@
     "skipLibCheck": true
   },
   "include": ["src", "drizzle", "tests", "drizzle.config.ts"],
-  "exclude": ["node_modules", "dist", "coverage"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "web",
+    "tests/web-auth.test.ts"
+  ]
 }
