@@ -1,7 +1,7 @@
-import {
-  finalizePending,
-  insertPendingDecision,
-} from "./store.js";
+import { eq } from "drizzle-orm";
+import { db } from "../db/client.js";
+import { users } from "../../drizzle/schema.js";
+import { finalizePending, insertPendingDecision } from "./store.js";
 import type { Brief } from "../llm/synthesize-prompt.js";
 import type { Retrieved } from "../answer/retrieve.js";
 import type { ResearchFinding } from "../research/tavily.js";
@@ -49,15 +49,45 @@ export async function recordPendingDecision(
 }
 
 /**
- * Finalize a pending decision with the human's call. Rejects (throws) if the
- * row is missing or already finalized — a decision is finalized exactly once.
+ * Finalize a pending decision with the human's call. Enforces the approve/reject
+ * boundary AT THE DATA LAYER: it resolves the caller's role from the DB and
+ * refuses unless they are a founder. This fires even if every API-route check is
+ * bypassed (a script, a direct MCP call, a misconfigured client) — the
+ * "through the stack" guarantee. Rejects (throws) if the row is missing or
+ * already finalized — a decision is finalized exactly once.
  */
 export async function finalizeDecision(
   decision_id: string,
   human_decision: "approved" | "rejected",
+  user_id: string,
   human_note?: string,
 ): Promise<void> {
-  const ok = await finalizePending(decision_id, human_decision, human_note);
+  // 1. Resolve the role from the DB — the single source of truth.
+  const userRows = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, user_id))
+    .limit(1);
+  const found = userRows[0];
+  if (!found) {
+    throw new Error(`User ${user_id} not found`);
+  }
+
+  // 2. Enforce: only founders can finalize a decision.
+  if (found.role !== "founder") {
+    throw new Error(
+      `Role '${found.role}' cannot finalize decisions — only 'founder' can. ` +
+        `This check runs in the data layer, not just at the API surface.`,
+    );
+  }
+
+  // 3. Perform the single append-only UPDATE.
+  const ok = await finalizePending(
+    decision_id,
+    human_decision,
+    user_id,
+    human_note,
+  );
   if (!ok) {
     throw new Error(
       `Decision ${decision_id} not found or already finalized (append-only: a decision is finalized once).`,
