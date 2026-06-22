@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  pgEnum,
   pgTable,
   text,
   uuid,
@@ -183,6 +184,43 @@ export const decisions = pgTable("decisions", {
     .notNull()
     .defaultNow(),
   decidedAt: timestamp("decided_at", { withTimezone: true }),
+  // Added in the RBAC build: who finalized this decision. Nullable — decisions
+  // from before the auth layer existed have no associated user.
+  finalizedByUserId: uuid("finalized_by_user_id").references(
+    (): AnyPgColumn => users.id,
+  ),
+});
+
+// ---- RBAC: users, sessions, roles (added on top of the decision brain) -----
+
+// Three roles; the finalize-a-decision boundary is enforced at the data layer.
+export const userRoleEnum = pgEnum("user_role", [
+  "founder",
+  "ops_lead",
+  "analyst",
+]);
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  name: text("name").notNull(),
+  role: userRoleEnum("role").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Server-side sessions (opaque random token as the PK, not a JWT).
+export const sessions = pgTable("sessions", {
+  token: text("token").primaryKey(), // 32-byte random hex
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 // Convenience row types inferred from the schema.
@@ -200,3 +238,7 @@ export type Signal = typeof signals.$inferSelect;
 export type NewSignal = typeof signals.$inferInsert;
 export type Decision = typeof decisions.$inferSelect;
 export type NewDecision = typeof decisions.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
