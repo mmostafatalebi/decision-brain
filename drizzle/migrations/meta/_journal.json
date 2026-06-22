@@ -15,6 +15,13 @@
       "when": 1781958983265,
       "tag": "0001_melted_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782123089505,
+      "tag": "0002_slim_lady_mastermind",
+      "breakpoints": true
     }
   ]
 }
