@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0e0d;
+  --panel: #101614;
+  --panel-2: #0d1311;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --tp: #e9f0ea;
+  --ts: #aebcb2;
+  --tm: #7d8e83;
+  --tg: #586a5f;
+  --em: #34d399;
+  --em-deep: #10b981;
+  --amber: #f5b049;
+  --rose: #fb7185;
+  --cyan: #5cc8d6;
+}
+
+html.light {
+  --bg: #fafbfa;
+  --panel: #ffffff;
+  --panel-2: #f4f6f4;
+  --line: rgba(0, 0, 0, 0.08);
+  --line-2: rgba(0, 0, 0, 0.14);
+  --tp: #0a0e0d;
+  --ts: #3d4742;
+  --tm: #586a5f;
+  --tg: #7d8e83;
+}
+
+html {
+  background:
+    radial-gradient(1200px 700px at 85% -5%, rgba(16, 185, 129, 0.1), transparent 60%),
+    radial-gradient(900px 600px at 0% 100%, rgba(92, 200, 214, 0.06), transparent 55%),
+    var(--bg);
+  color: var(--tp);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: transparent;
+  font-family: var(--font-sans);
+  line-height: 1.62;
+}
+
+.klabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tm);
+}
