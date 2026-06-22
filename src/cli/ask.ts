@@ -1,21 +1,31 @@
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
+import { eq } from "drizzle-orm";
 import { ask } from "../answer/index.js";
 import { finalizeDecision } from "../decisions/log.js";
 import { factsByIds } from "../answer/store.js";
-import { pool } from "../db/client.js";
+import { db, pool } from "../db/client.js";
+import { users } from "../../drizzle/schema.js";
 
 /**
  * Minimal human-approval CLI. The brain recommends; the human approves or
  * rejects; the exchange lands in the append-only decision log. No UI deps.
  *
  *   pnpm cli ask "What runway can I defend this week?"
+ *   pnpm cli ask --as=devin@loomwork.local "..."   # acts as a different user
+ *
+ * The acting user is who approves/rejects; only a founder can finalize (the
+ * data-layer check in finalizeDecision enforces it).
  */
 
 function parseQuestion(argv: string[]): string | null {
   const args = argv.slice(2);
   const rest = args[0] === "ask" ? args.slice(1) : args;
-  const q = rest.join(" ").trim();
+  // Drop the --as=<email> flag so it doesn't leak into the question text.
+  const q = rest
+    .filter((a) => !a.startsWith("--as="))
+    .join(" ")
+    .trim();
   return q.length > 0 ? q : null;
 }
 
@@ -26,9 +36,26 @@ function short(s: string, n = 100): string {
 async function main(): Promise<void> {
   const question = parseQuestion(process.argv);
   if (!question) {
-    console.error('Usage: pnpm cli ask "your question"');
+    console.error('Usage: pnpm cli ask [--as=<email>] "your question"');
     process.exit(2);
   }
+
+  // Who's acting: --as=<email> flag, else env, else Maya.
+  const asEmail =
+    process.argv.find((a) => a.startsWith("--as="))?.split("=")[1] ??
+    process.env.DECISION_BRAIN_USER ??
+    "maya@loomwork.local";
+  const userRows = await db
+    .select({ id: users.id, role: users.role })
+    .from(users)
+    .where(eq(users.email, asEmail))
+    .limit(1);
+  const cliUser = userRows[0];
+  if (!cliUser) {
+    console.error(`User not found: ${asEmail}. Run 'pnpm seed:users' first.`);
+    process.exit(1);
+  }
+  console.log(`Acting as: ${asEmail} (role: ${cliUser.role})`);
 
   console.log(`\n❓ ${question}\n`);
   console.log("Thinking (retrieve → gap-detect → research → synthesize)…\n");
@@ -87,14 +114,22 @@ async function main(): Promise<void> {
   }
   rl.close();
 
-  await finalizeDecision(decision_id, humanDecision, note);
-  console.log(`\n✅ Decision logged (${humanDecision}). ID: ${decision_id}\n`);
+  try {
+    await finalizeDecision(decision_id, humanDecision, cliUser.id, note);
+    console.log(`\n✅ Decision logged (${humanDecision}). ID: ${decision_id}\n`);
+  } catch (err) {
+    // e.g. a non-founder trying to finalize — the data layer refuses. The brief
+    // still exists as a pending decision; it just isn't finalized.
+    console.error(`\n⛔ ${err instanceof Error ? err.message : String(err)}`);
+    console.error(`   Decision ${decision_id} remains pending.\n`);
+    process.exitCode = 1;
+  }
 }
 
 main()
   .then(() => pool.end())
   .catch(async (err) => {
-    console.error(err);
+    console.error(err instanceof Error ? err.message : err);
     await pool.end();
     process.exit(1);
   });
