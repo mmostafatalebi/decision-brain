@@ -46,6 +46,7 @@ export async function insertPendingDecision(
 export async function finalizePending(
   id: string,
   humanDecision: "approved" | "rejected",
+  userId: string,
   note: string | undefined,
 ): Promise<boolean> {
   const updated = await db
@@ -54,6 +55,7 @@ export async function finalizePending(
       humanDecision,
       humanNote: note ?? null,
       decidedAt: new Date(),
+      finalizedByUserId: userId, // audit: who finalized this decision
     })
     .where(and(eq(decisions.id, id), isNull(decisions.humanDecision)))
     .returning({ id: decisions.id });
