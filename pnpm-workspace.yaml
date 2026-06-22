@@ -1,4 +1,5 @@
 # pnpm 11+ reads build-script approvals here (no longer the package.json "pnpm" field).
 # esbuild backs tsx/vitest and needs its install script to run.
 allowBuilds:
+  bcrypt: true
   esbuild: true

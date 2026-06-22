@@ -10,18 +10,16 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "seed": "tsx src/seed.ts",
+    "seed:users": "tsx scripts/seed-users.ts",
     "refresh": "pnpm seed && pnpm ingest && pnpm resolve && pnpm relations && pnpm signals && pnpm contradictions",
-
     "ingest": "tsx src/ingest/index.ts",
     "resolve": "tsx src/entities/index.ts",
     "relations": "tsx src/entities/relations.ts",
     "signals": "tsx src/signals/index.ts",
     "contradictions": "tsx src/contradictions/index.ts",
-
     "ask": "tsx src/cli/ask.ts",
     "cli": "tsx src/cli/ask.ts",
     "mcp": "tsx src/mcp/server.ts",
@@ -31,6 +29,7 @@
     "@anthropic-ai/sdk": "^0.30.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@tavily/core": "^0.7.6",
+    "bcrypt": "^6.0.0",
     "drizzle-orm": "^0.36.0",
     "openai": "^4.70.0",
     "pg": "^8.13.0",
@@ -39,6 +38,7 @@
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
     "drizzle-kit": "^0.28.0",
