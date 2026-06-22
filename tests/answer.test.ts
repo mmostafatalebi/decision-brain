@@ -1,4 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  beforeAll,
+  afterAll,
+} from "vitest";
+import { eq, inArray } from "drizzle-orm";
 
 vi.mock("../src/embed/embed.js", () => ({ embed: vi.fn(), embedBatch: vi.fn() }));
 vi.mock("../src/answer/store.js", () => ({
@@ -17,15 +26,17 @@ vi.mock("../src/llm/provider.js", () => ({
   completeJSON: vi.fn(),
   ExtractionError: class extends Error {},
 }));
-vi.mock("../src/decisions/store.js", () => ({
-  insertPendingDecision: vi.fn(),
-  finalizePending: vi.fn(),
-}));
+// The decision-log tests below are real-DB (so they prove finalized_by_user_id
+// is actually written and the role check fires); the decisions store is NOT
+// mocked.
 
 import { embed } from "../src/embed/embed.js";
 import * as store from "../src/answer/store.js";
 import { completeJSON } from "../src/llm/provider.js";
-import * as dstore from "../src/decisions/store.js";
+import { db, pool } from "../src/db/client.js";
+import { decisions, users } from "../drizzle/schema.js";
+import { hashPassword } from "../src/auth/hash.js";
+import { insertPendingDecision } from "../src/decisions/store.js";
 import { retrieveForQuestion } from "../src/answer/retrieve.js";
 import { detectGaps } from "../src/answer/gap-detect.js";
 import { validateCitations } from "../src/answer/validate-citations.js";
@@ -186,31 +197,100 @@ describe("validateCitations (provenance gate)", () => {
   });
 });
 
-describe("decision log (append-only)", () => {
-  it("8. finalizeDecision twice → the second call is rejected", async () => {
-    vi.mocked(dstore.finalizePending).mockResolvedValueOnce(true).mockResolvedValue(false);
-    await expect(finalizeDecision("d1", "approved")).resolves.toBeUndefined();
-    await expect(finalizeDecision("d1", "approved")).rejects.toThrow(/already finalized/i);
+describe("decision log (append-only, real DB)", () => {
+  const TEST_EMAIL = "answer-finalize-test@loomwork.local";
+  let founderId: string;
+  const createdDecisionIds: string[] = [];
+
+  beforeAll(async () => {
+    await db.delete(users).where(eq(users.email, TEST_EMAIL));
+    const inserted = await db
+      .insert(users)
+      .values({
+        email: TEST_EMAIL,
+        name: "Finalize Test",
+        role: "founder",
+        passwordHash: await hashPassword("demo"),
+      })
+      .returning({ id: users.id });
+    founderId = inserted[0]!.id;
   });
 
-  it("9. recordPendingDecision writes a pending row (no human decision set)", async () => {
-    vi.mocked(dstore.insertPendingDecision).mockResolvedValue("dec-1");
+  afterAll(async () => {
+    // Decisions reference the user (FK), so remove them before the user.
+    if (createdDecisionIds.length > 0) {
+      await db.delete(decisions).where(inArray(decisions.id, createdDecisionIds));
+    }
+    await db.delete(users).where(eq(users.email, TEST_EMAIL));
+    await pool.end();
+  });
+
+  async function makePendingDecision(question: string): Promise<string> {
+    const id = await insertPendingDecision({
+      question,
+      factsUsed: [],
+      signalsUsed: [],
+      researchRefs: [],
+      recommendation: "r",
+      confidence: 0.5,
+      openGaps: [],
+    });
+    createdDecisionIds.push(id);
+    return id;
+  }
+
+  it("8. finalize writes finalized_by_user_id, and a second finalize is rejected", async () => {
+    const id = await makePendingDecision("q8");
+    await finalizeDecision(id, "approved", founderId);
+
+    const rows = await db
+      .select({
+        humanDecision: decisions.humanDecision,
+        finalizedByUserId: decisions.finalizedByUserId,
+        decidedAt: decisions.decidedAt,
+      })
+      .from(decisions)
+      .where(eq(decisions.id, id));
+    expect(rows[0]?.humanDecision).toBe("approved");
+    expect(rows[0]?.finalizedByUserId).toBe(founderId);
+    expect(rows[0]?.decidedAt).not.toBeNull();
+
+    await expect(finalizeDecision(id, "approved", founderId)).rejects.toThrow(
+      /already finalized/i,
+    );
+  });
+
+  it("9. recordPendingDecision writes a pending row (no human decision, no finalizer)", async () => {
+    const sigId = "88888888-8888-8888-8888-888888888888";
     const retrieved = {
       facts: [],
-      signals: [{ id: "sig1", type: "runway_claim", status: "emerging", summary: "s", factIds: [U.r18] }],
+      signals: [
+        {
+          id: sigId,
+          type: "runway_claim",
+          status: "emerging",
+          summary: "s",
+          factIds: [U.r18],
+        },
+      ],
       entities: [],
       contradictions: [],
     };
     const { decision_id } = await recordPendingDecision(
-      "q",
+      "q9",
       brief({ cited_fact_ids: [U.r18] }),
       retrieved,
       [],
     );
-    expect(decision_id).toBe("dec-1");
-    const payload = vi.mocked(dstore.insertPendingDecision).mock.calls[0]![0];
-    expect(payload.factsUsed).toEqual([U.r18]);
-    expect(payload.signalsUsed).toEqual(["sig1"]); // signal shares the cited fact
-    expect(payload).not.toHaveProperty("humanDecision");
+    createdDecisionIds.push(decision_id);
+
+    const rows = await db
+      .select()
+      .from(decisions)
+      .where(eq(decisions.id, decision_id));
+    expect(rows[0]?.humanDecision).toBeNull();
+    expect(rows[0]?.finalizedByUserId).toBeNull();
+    expect(rows[0]?.factsUsed).toEqual([U.r18]);
+    expect(rows[0]?.signalsUsed).toEqual([sigId]); // signal shares the cited fact
   });
 });
