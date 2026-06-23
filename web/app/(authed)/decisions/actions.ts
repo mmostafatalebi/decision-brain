@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth/require-role";
 import { finalizeDecision } from "@/lib/brain";
 
@@ -15,6 +16,8 @@ async function finalize(
   await finalizeDecision(decisionId, decision, user.id, note);
   revalidatePath("/decisions");
   revalidatePath("/dashboard");
+  // Redirect carries the toast flag; the Toast component clears it after 3s.
+  redirect(`/decisions?toast=${decision}`);
 }
 
 export async function approveDecision(formData: FormData): Promise<void> {
