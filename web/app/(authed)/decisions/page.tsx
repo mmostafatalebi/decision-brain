@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth/session";
 import {
@@ -8,16 +9,21 @@ import {
   type DecisionListRow,
 } from "@/lib/brain";
 import { Card, Klabel, Pill } from "@/components/ui";
+import { Ladder } from "@/components/ladder";
+import { Toast } from "@/components/toast";
 import {
   confidenceTone,
   decisionTone,
   relativeTime,
-  tierTone,
+  tierToLadder,
   truncate,
 } from "@/lib/format";
 import { approveDecision, rejectDecision } from "./actions";
 
 type ResearchRef = { url?: string; title?: string; query?: string };
+
+const FOCUS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-em focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
 export default async function DecisionsPage({
   searchParams,
@@ -33,13 +39,16 @@ export default async function DecisionsPage({
       ? await listHistoryDecisions(50)
       : await listPendingDecisions();
 
-  // Batch-fetch every cited fact once, then map per decision (no N+1).
   const allFactIds = [...new Set(rows.flatMap((d) => d.factsUsed))];
   const factList = await getFactsLite(allFactIds);
   const factMap = new Map(factList.map((f) => [f.id, f]));
 
   return (
     <div className="space-y-6">
+      <Suspense fallback={null}>
+        <Toast />
+      </Suspense>
+
       <div>
         <Klabel className="mb-3">review queue</Klabel>
         <h1 className="font-display text-4xl font-semibold tracking-tight">
@@ -57,11 +66,7 @@ export default async function DecisionsPage({
       </div>
 
       {rows.length === 0 ? (
-        <p className="text-sm text-tm">
-          {tab === "pending"
-            ? "Nothing awaiting review."
-            : "No finalized decisions yet."}
-        </p>
+        <EmptyState tab={tab} />
       ) : (
         <div className="space-y-3">
           {rows.map((d) => (
@@ -81,6 +86,31 @@ export default async function DecisionsPage({
   );
 }
 
+function EmptyState({ tab }: { tab: "pending" | "history" }) {
+  if (tab === "history") {
+    return (
+      <Card>
+        <Klabel className="mb-2">no history</Klabel>
+        <p className="text-ts">
+          Approved and rejected decisions show up here.
+        </p>
+      </Card>
+    );
+  }
+  return (
+    <Card>
+      <Klabel className="mb-2">queue is clear</Klabel>
+      <p className="font-display text-2xl text-tp">Nothing pending.</p>
+      <p className="mt-2 text-sm text-tm">
+        <Link href="/ask" className={`rounded text-em underline ${FOCUS}`}>
+          Ask a question
+        </Link>{" "}
+        to generate a brief.
+      </p>
+    </Card>
+  );
+}
+
 function Tab({
   href,
   active,
@@ -93,10 +123,8 @@ function Tab({
   return (
     <Link
       href={href}
-      className={`-mb-px border-b-2 px-4 py-2 font-mono text-xs uppercase tracking-wider transition ${
-        active
-          ? "border-em text-tp"
-          : "border-transparent text-ts hover:text-tp"
+      className={`-mb-px rounded-t border-b-2 px-4 py-2 font-mono text-xs uppercase tracking-wider transition-colors ${FOCUS} ${
+        active ? "border-em text-tp" : "border-transparent text-ts hover:text-tp"
       }`}
     >
       {children}
@@ -120,7 +148,7 @@ function DecisionRow({
   return (
     <Card className="p-0">
       <details className="group">
-        <summary className="flex cursor-pointer list-none items-center gap-4 px-5 py-4">
+        <summary className="flex cursor-pointer list-none items-center gap-4 rounded-lg px-5 py-4 transition-colors hover:bg-panel-2">
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-lg text-tp">
               {d.question}
@@ -153,25 +181,29 @@ function DecisionRow({
             <div>
               <Klabel className="mb-2">cited facts</Klabel>
               <div className="space-y-2">
-                {facts.map((f) => (
-                  <div
-                    key={f.id}
-                    className="rounded-md border border-line bg-panel-2 p-3"
-                  >
-                    <div className="mb-1.5 flex items-center gap-2">
-                      <Pill tone={tierTone(f.evidenceTier)}>
-                        E{f.evidenceTier}
-                      </Pill>
-                      <Pill tone="muted">{f.predicate}</Pill>
-                      <span className="ml-auto font-mono text-xs text-tm">
-                        {f.sourceRef}
-                      </span>
+                {facts.map((f) => {
+                  const ladder = tierToLadder(f.evidenceTier);
+                  return (
+                    <div
+                      key={f.id}
+                      className="rounded-md border border-line bg-panel-2 p-3"
+                    >
+                      <div className="mb-1.5 flex items-center gap-3">
+                        <Ladder
+                          position={ladder.position}
+                          label={ladder.label}
+                        />
+                        <Pill tone="muted">{f.predicate}</Pill>
+                        <span className="ml-auto font-mono text-xs text-tm">
+                          {f.sourceRef}
+                        </span>
+                      </div>
+                      <p className="font-mono text-xs text-ts">
+                        &ldquo;{f.verbatimQuote}&rdquo;
+                      </p>
                     </div>
-                    <p className="font-mono text-xs text-ts">
-                      &ldquo;{f.verbatimQuote}&rdquo;
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : null}
@@ -199,17 +231,17 @@ function DecisionRow({
               <input
                 name="note"
                 placeholder="note (optional)"
-                className="flex-1 rounded-md border border-line bg-panel px-3 py-2 text-sm text-tp outline-none placeholder:text-tg focus:border-em"
+                className={`flex-1 rounded-md border border-line bg-panel px-3 py-2 text-sm text-tp outline-none transition-colors placeholder:text-tg focus:border-em ${FOCUS}`}
               />
               <button
                 formAction={approveDecision}
-                className="rounded-md bg-em-deep px-4 py-2 text-sm font-medium text-[#06120d] transition hover:bg-em"
+                className={`rounded-md bg-em-deep px-4 py-2 text-sm font-medium text-[#06120d] transition-colors hover:bg-em ${FOCUS}`}
               >
                 Approve
               </button>
               <button
                 formAction={rejectDecision}
-                className="rounded-md border border-rose px-4 py-2 text-sm font-medium text-rose transition hover:bg-panel-2"
+                className={`rounded-md border border-rose px-4 py-2 text-sm font-medium text-rose transition-colors hover:bg-panel-2 ${FOCUS}`}
               >
                 Reject
               </button>

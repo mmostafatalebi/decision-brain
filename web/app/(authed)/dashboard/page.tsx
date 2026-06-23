@@ -57,12 +57,17 @@ export default async function DashboardPage() {
         <Klabel className="mb-3">recent activity</Klabel>
         <Card className="divide-y divide-line p-0">
           {recent.length === 0 ? (
-            <p className="p-5 text-sm text-tm">No decisions yet.</p>
+            <div className="p-5">
+              <p className="klabel mb-1">no activity yet</p>
+              <p className="text-sm text-tm">
+                Decisions you generate and finalize will appear here.
+              </p>
+            </div>
           ) : (
             recent.map((d) => (
               <div
                 key={d.id}
-                className="flex items-center justify-between gap-4 px-5 py-3.5"
+                className="flex items-center justify-between gap-4 px-5 py-3.5 transition-colors hover:bg-panel-2"
               >
                 <span className="min-w-0 flex-1 truncate text-sm text-tp">
                   {truncate(d.question, 70)}
@@ -123,8 +128,11 @@ function QuickLink({
   sub: string;
 }) {
   return (
-    <Link href={href}>
-      <Card className="transition hover:border-line-2">
+    <Link
+      href={href}
+      className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-em focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+    >
+      <Card className="transition-all hover:-translate-y-px hover:border-line-2">
         <p className="font-medium text-tp">{title}</p>
         <p className="mt-1 text-sm text-ts">{sub}</p>
       </Card>
