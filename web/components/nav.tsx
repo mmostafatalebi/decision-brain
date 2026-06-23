@@ -45,7 +45,7 @@ export function Nav({
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center justify-between border-l-2 px-3 py-2 font-mono text-xs uppercase tracking-wider transition ${
+            className={`flex items-center justify-between rounded-r border-l-2 px-3 py-2 font-mono text-xs uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-em focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
               active
                 ? "border-em text-tp"
                 : "border-transparent text-ts hover:text-tp"

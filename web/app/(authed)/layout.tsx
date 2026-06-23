@@ -28,7 +28,9 @@ export default async function AuthedLayout({
           <Pill tone="em">{roleLabel(user.role)}</Pill>
           <ThemeToggle />
           <form action="/api/logout" method="POST">
-            <button className="text-tm transition hover:text-tp">Sign out</button>
+            <button className="rounded text-tm transition-colors hover:text-tp focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-em focus-visible:ring-offset-2 focus-visible:ring-offset-bg">
+              Sign out
+            </button>
           </form>
         </div>
       </header>
