@@ -340,3 +340,118 @@ the validation contract and the tool contract come from the same definition.
 - **Single tenant.** Cross-venture projection was out of scope, so the schema is
   single-venture (Loomwork) on purpose. If I had another week, multi-tenant
   projection is the first thing I'd reach for.
+
+## 16. Web app and role-based access (added after first review)
+
+I sent the first version — the brain, the CLI, the MCP server — and the main
+thing that came back was: add a frontend with role-based access, and enforce the
+roles through the stack rather than hiding them in the UI. That last part is the
+whole ask. Anyone can gray out a button. The question is what happens when
+someone gets past it.
+
+So "through the stack" meant two things to me. The API surface checks permission
+before it does anything. And the function that actually writes the decision
+checks again, on its own, reading the role straight from the database. The second
+check is the one that counts, because it doesn't trust the caller.
+
+The action lives in `web/app/(authed)/decisions/actions.ts`. Before it touches
+anything it calls `requirePermission("finalize_decision")`, which pulls the
+current session's user and throws if their role isn't allowed. That's the
+surface. But `finalizeDecision` in `src/decisions/log.ts` takes a `user_id` and
+does its own lookup, `SELECT role FROM users WHERE id = user_id`, and refuses if
+the role isn't `founder`:
+
+> Role 'ops_lead' cannot finalize decisions — only 'founder' can. This check runs
+> in the data layer, not just at the API surface.
+
+A script that imports `finalizeDecision` directly gets that message. A direct MCP
+call gets it. A misconfigured client that skips the route guard gets it. The
+route check is there so the UI can fail fast and show something clean; the
+data-layer check is the actual contract. I tested it for real: Devin's session
+forcing a POST to the approve action comes back 500 and the decision stays
+pending, while Maya's goes through and writes her email into the audit row.
+
+Ingest is gated at the API surface but `ingestRawItem` itself has no role check,
+and that's on purpose. The protection on ingest isn't the role, it's the
+verbatim-quote verifier from Phase 3. Every extracted fact has to quote a literal
+substring of the source or it gets dropped before it reaches the facts table. So
+even if an analyst found a way to call ingest, they couldn't put a fabricated
+fact into typed memory; the worst they could do is add a raw item that produces
+zero facts. Approve and reject are a different kind of action. There the role is
+the safety check, because the output is a permanent row that says a specific
+person signed off. That's the one place where who is calling matters, so that's
+the one place the data layer enforces it.
+
+The matrix as it shipped:
+
+```
+              ask    ingest   finalize_decision
+  founder      ✓       ✓             ✓
+  ops_lead     ✓       ✓             ✗
+  analyst      ✓       ✗             ✗
+```
+
+Everyone who can log in can ask, because asking is a read that produces a
+recommendation and changes nothing. Ops leads can also feed the memory, since the
+verbatim gate keeps that honest. Only the founder can finalize, because that's
+Maya's call and the audit row carries her name.
+
+That audit lives in one column. `decisions.finalized_by_user_id` is a UUID with a
+foreign key to `users.id`. It's nullable, on purpose: the decisions from before
+the auth work existed don't have a finalizer, and I didn't want to backfill fake
+data into them. New finalizations record the user, so "who signed off on this" is
+one join, `decisions` to `users` on that column, and you get the email next to
+the question and the timestamp.
+
+The first version had no HTTP surface. It ran as a CLI and an MCP server over
+stdio. The web app is Next.js 14 living in `web/`, a sibling to `src/`, and the
+part I cared about most is what it left alone. Nothing in `src/answer/`,
+`src/extract/`, `src/entities/`, `src/signals/`, `src/contradictions/`,
+`src/research/`, or `src/llm/` changed. The brain still reads and writes the same
+Postgres-with-pgvector it always did. The web layer calls the existing functions
+— `ask`, `ingestRawItem`, `finalizeDecision` — and adds its own two tables,
+`users` and `sessions`. One repo, one database, one thing to deploy. The brain
+files that did change were narrow. `src/decisions/log.ts` gained the role check
+inside `finalizeDecision` — a non-founder caller bounces at the data layer.
+`src/decisions/store.ts` picked up a handful of read-only queries for the
+dashboard and the queue, no new writes. `src/mcp/server.ts` and `src/cli/ask.ts`
+grew small bits so the MCP server and the CLI can pass a user identity through.
+Nothing else in `src/` moved.
+
+One mapping is worth spelling out so the doc and the screen agree. Facts carry an
+`evidence_tier`, E1 through E5. The promotion ladder — candidate, emerging,
+validated, decision_grade — belongs to signals, not facts. But the UI draws the
+ladder on each cited fact, because "how strong is this evidence" is what someone
+reading a brief wants to see, and the ladder is the vocabulary the rest of the
+system already speaks. The mapping is in `web/lib/format.ts`, `tierToLadder`: E5
+shows as decision_grade, E4 as validated, E3 as emerging, E1 and E2 as candidate.
+It's a display choice, not a change to the model. A fact's tier is still its tier
+in the database; the ladder is how that tier gets drawn.
+
+This is built for the brief, not for an org's Monday morning. If it were going
+live, here's what I'd do next, roughly in order:
+
+- Replace bcrypt-on-Postgres with SSO through an identity provider. Hand-rolled
+  login is fine for three demo accounts; it's not how a real company manages who
+  Maya is.
+- Make it invite-only. There's no self-registration now, and there shouldn't be —
+  a founder adds people, not a signup form.
+- Add refresh tokens and an idle timeout. Sessions are a flat seven days; a real
+  one expires sooner and renews on activity.
+- Add a password reset path. Today there's no recovery: lose the password, lose
+  the account.
+- Rate-limit login and ask. Login for the usual reasons, ask because every call
+  spends LLM tokens and a tight loop gets expensive fast.
+- Make it multi-tenant. The schema is single-venture; real use means isolating
+  Loomwork's data from the next company's.
+- Harden the audit trail. The decisions table is append-only at the row level,
+  which is good, but a hash chain over the rows would make tampering detectable
+  rather than just discouraged.
+- Replace `console.error` with structured logging and correlation IDs, so a
+  question can be traced from the HTTP request through the brain to the decision
+  row.
+- Validate input with a schema library instead of by hand. The Server Actions
+  parse FormData manually; Zod at the boundary would be tighter.
+
+None of these are hard. They're just not what the brief asked for, and I'd rather
+ship the thing it asked for and know exactly what's missing.
