@@ -4,13 +4,23 @@ import { loginAction } from "./actions";
 
 const initialState: { error?: string } = {};
 
+const FOCUS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-em focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+
+const DEMO = [
+  ["founder", "maya@loomwork.local"],
+  ["ops_lead", "devin@loomwork.local"],
+  ["analyst", "priya@loomwork.local"],
+  ["password", "demo"],
+];
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-md bg-em-deep px-4 py-2.5 font-medium text-[#06120d] transition hover:bg-em disabled:opacity-60"
+      className={`w-full rounded-md bg-em-deep px-4 py-2.5 font-medium text-[#06120d] transition-colors hover:bg-em disabled:opacity-60 ${FOCUS}`}
     >
       {pending ? "Signing in…" : "Sign in"}
     </button>
@@ -21,7 +31,7 @@ export default function LoginPage() {
   const [state, formAction] = useFormState(loginAction, initialState);
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
+    <div className="flex min-h-screen items-center justify-center px-6 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-9 flex items-center gap-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-em shadow-[0_0_16px_var(--em)]" />
@@ -44,7 +54,7 @@ export default function LoginPage() {
               type="email"
               autoComplete="username"
               required
-              className="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none transition placeholder:text-tg focus:border-em"
+              className={`w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none transition-colors placeholder:text-tg focus:border-em ${FOCUS}`}
               placeholder="maya@loomwork.local"
             />
           </div>
@@ -59,7 +69,7 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               required
-              className="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none transition placeholder:text-tg focus:border-em"
+              className={`w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none transition-colors placeholder:text-tg focus:border-em ${FOCUS}`}
               placeholder="demo"
             />
           </div>
@@ -73,12 +83,17 @@ export default function LoginPage() {
           <SubmitButton />
         </form>
 
-        <p className="mt-8 font-mono text-xs leading-relaxed text-tg">
-          Demo accounts — password{" "}
-          <span className="text-tm">demo</span>:
-          <br />
-          maya@loomwork.local · devin@loomwork.local · priya@loomwork.local
-        </p>
+        <div className="mt-9">
+          <p className="klabel mb-2">demo accounts</p>
+          <div className="space-y-1 font-mono text-xs">
+            {DEMO.map(([k, v]) => (
+              <div key={k} className="flex gap-3">
+                <span className="w-20 text-tm">{k}</span>
+                <span className="text-ts">{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
