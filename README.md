@@ -182,3 +182,65 @@ right answer and not a bug.
 
 I built this as a take-home for Builders Studio / VSI — thanks for a prompt that
 was genuinely fun to build against.
+
+## Web app (added after first review)
+
+The first version was a CLI and an MCP server. The review asked for a frontend
+with role-based access, so there's now a Next.js 14 app in `web/` that puts a UI
+on the brain: a dashboard, an ingest form, an ask page, and a decisions queue. It
+has its own hand-rolled auth — three demo users, a session in a cookie,
+permissions by role — and it runs against the same database and the same brain
+functions as everything else.
+
+### Run it
+
+```bash
+pnpm install
+pnpm db:migrate          # apply the schema, including the users/sessions tables
+pnpm seed:users          # creates Maya, Devin, Priya
+pnpm dev:web             # http://localhost:3000
+```
+
+### Demo accounts
+
+```
+role        email                       password
+founder     maya@loomwork.local         demo
+ops_lead    devin@loomwork.local        demo
+analyst     priya@loomwork.local        demo
+```
+
+Passwords are `demo` because this is a local demo. It would not ship that way;
+see [`DESIGN.md`](./DESIGN.md) §16 for what production auth would need.
+
+### Who can do what
+
+```
+              ask    ingest   finalize_decision
+  founder      ✓       ✓             ✓
+  ops_lead     ✓       ✓             ✗
+  analyst      ✓       ✗             ✗
+```
+
+The full reasoning is in `DESIGN.md` §16. The short version: anyone can ask, ops
+leads can also ingest, and only the founder can finalize a decision — that last
+rule lives in the data layer, not just the UI.
+
+### Try it
+
+1. Log in as `maya@loomwork.local` and ask something, like "What runway can I
+   defend this week?". You get a cited brief, logged as pending.
+2. Open the decisions queue. As Maya you see Approve and Reject. Approve it: a
+   toast confirms, and the row moves to History with your email on it.
+3. Sign out and log in as `devin@loomwork.local`. Same queue, no buttons — just
+   an "Awaiting founder review" pill, because ops leads can't finalize.
+4. Force the approve action anyway with a direct POST and the server refuses:
+   `Role 'ops_lead' cannot finalize decisions — only 'founder' can.` The data
+   layer doesn't care that the button was hidden.
+5. Log in as `priya@loomwork.local` and open Ingest. Analysts get a read-only
+   notice instead of the form.
+
+### Theme
+
+Dark by default, with a toggle in the header that persists to localStorage. Both
+modes use the same palette.
