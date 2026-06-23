@@ -42,7 +42,10 @@ describe("session token", () => {
 
 describe("user seed + role enum (data layer)", () => {
   it("seeds idempotently — two runs leave exactly three demo users", async () => {
-    await db.delete(users).where(inArray(users.email, DEMO_EMAILS));
+    // Don't delete the demo users first: once decisions reference a user
+    // (finalized_by_user_id), the FK blocks deletion — and seedUsers is
+    // ON CONFLICT DO NOTHING, so running it twice already proves the
+    // no-duplicate invariant from whatever the starting state is.
     await seedUsers();
     await seedUsers();
     const rows = await db
