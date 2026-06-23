@@ -40,3 +40,18 @@ export function decisionTone(status: string | null): Tone {
 export function roleLabel(role: string): string {
   return role.replace("_", " ");
 }
+
+/**
+ * Map a fact's evidence tier (E1–E5) onto the promotion-ladder vocabulary, so a
+ * cited fact's evidence strength reads as a position on the same ladder the
+ * architecture describes (candidate → emerging → validated → decision_grade).
+ */
+export function tierToLadder(tier: number): {
+  position: number;
+  label: string;
+} {
+  if (tier >= 5) return { position: 3, label: "decision_grade" };
+  if (tier === 4) return { position: 2, label: "validated" };
+  if (tier === 3) return { position: 1, label: "emerging" };
+  return { position: 0, label: "candidate" };
+}

@@ -2,7 +2,8 @@
 import { useFormState, useFormStatus } from "react-dom";
 import { submitItem } from "./actions";
 import { Card, Klabel, Pill } from "@/components/ui";
-import { tierTone } from "@/lib/format";
+import { Ladder } from "@/components/ladder";
+import { tierToLadder } from "@/lib/format";
 
 const SOURCE_TYPES = [
   "email",
@@ -14,13 +15,17 @@ const SOURCE_TYPES = [
   "other",
 ];
 
+const FOCUS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-em focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
+const INPUT = `w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none transition-colors placeholder:text-tg focus:border-em ${FOCUS}`;
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
-      className="rounded-md bg-em-deep px-4 py-2.5 font-medium text-[#06120d] transition hover:bg-em disabled:opacity-60"
+      className={`rounded-md bg-em-deep px-4 py-2.5 font-medium text-[#06120d] transition-colors hover:bg-em disabled:opacity-60 ${FOCUS}`}
     >
       {pending ? "Extracting…" : "Ingest"}
     </button>
@@ -37,11 +42,7 @@ export function IngestForm() {
       <form action={formAction} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Source type">
-            <select
-              name="source_type"
-              defaultValue="email"
-              className="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none focus:border-em"
-            >
+            <select name="source_type" defaultValue="email" className={INPUT}>
               {SOURCE_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -54,22 +55,18 @@ export function IngestForm() {
               name="source_id"
               required
               placeholder="e.g. acme-call-2026-06-20"
-              className="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none placeholder:text-tg focus:border-em"
+              className={INPUT}
             />
           </Field>
           <Field label="Source url (optional)">
-            <input
-              name="source_url"
-              placeholder="https://…"
-              className="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none placeholder:text-tg focus:border-em"
-            />
+            <input name="source_url" placeholder="https://…" className={INPUT} />
           </Field>
           <Field label="Valid at">
             <input
               type="date"
               name="valid_at"
               defaultValue={today}
-              className="w-full rounded-md border border-line bg-panel px-3 py-2.5 text-tp outline-none focus:border-em"
+              className={INPUT}
             />
           </Field>
         </div>
@@ -80,7 +77,7 @@ export function IngestForm() {
             required
             rows={12}
             placeholder="Paste the email body, call transcript, board note…"
-            className="w-full rounded-md border border-line bg-panel-2 px-3 py-2.5 font-mono text-sm text-tp outline-none placeholder:text-tg focus:border-em"
+            className={`w-full rounded-md border border-line bg-panel-2 px-3 py-2.5 font-mono text-sm text-tp outline-none transition-colors placeholder:text-tg focus:border-em ${FOCUS}`}
           />
         </Field>
 
@@ -88,7 +85,7 @@ export function IngestForm() {
       </form>
 
       {state && !state.ok ? (
-        <Card className="border-rose">
+        <Card className="border-l-2 border-l-rose">
           <Klabel className="mb-1">error</Klabel>
           <p className="text-sm text-rose">{state.error}</p>
         </Card>
@@ -97,7 +94,7 @@ export function IngestForm() {
       {state && state.ok ? (
         <div className="space-y-4">
           <Klabel>result</Klabel>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Pill tone="em">{state.factsExtracted} facts extracted</Pill>
             <Pill tone="cyan">{state.signalsTouched} signals touched</Pill>
             <Pill tone={state.itemsSkipped > 0 ? "amber" : "muted"}>
@@ -107,17 +104,20 @@ export function IngestForm() {
 
           {state.facts.length > 0 ? (
             <div className="space-y-2">
-              {state.facts.map((f, i) => (
-                <Card key={i} className="space-y-2">
-                  <div className="flex gap-2">
-                    <Pill tone={tierTone(f.tier)}>E{f.tier}</Pill>
-                    <Pill tone="muted">{f.predicate}</Pill>
-                  </div>
-                  <p className="rounded-md bg-panel-2 px-3 py-2 font-mono text-xs text-ts">
-                    &ldquo;{f.quote}&rdquo;
-                  </p>
-                </Card>
-              ))}
+              {state.facts.map((f, i) => {
+                const ladder = tierToLadder(f.tier);
+                return (
+                  <Card key={i} className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Ladder position={ladder.position} label={ladder.label} />
+                      <Pill tone="muted">{f.predicate}</Pill>
+                    </div>
+                    <p className="rounded-md bg-panel-2 px-3 py-2 font-mono text-xs text-ts">
+                      &ldquo;{f.quote}&rdquo;
+                    </p>
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-tm">
