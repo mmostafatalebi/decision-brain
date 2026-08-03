@@ -8,6 +8,9 @@ reads that week, turns it into typed memory she can cite, and answers those
 questions with briefs that surface the contradictions, point every claim back to
 the exact source, and leave a record of what she decided.
 
+**Live demo:** [decision-brain-gamma.vercel.app](https://decision-brain-gamma.vercel.app)
+— sign in with one of the [demo accounts](#demo-accounts) below.
+
 ## What this is
 
 The whole thing runs on one idea: I put the model at exactly two spots — turning
@@ -170,18 +173,13 @@ verification, entity resolution, signal clustering + promotion thresholds,
 contradiction rules, and the answer pipeline's retrieval / gap-detection /
 citation-validation / append-only logging.
 
-## Architecture
+## Design notes
 
 The long version is in [`DESIGN.md`](./DESIGN.md) — that's where I walk through
-every call I made, deviations from the brief included. If you only read two
-sections, read the one on signal aggregation (why I dropped pure embedding kNN
-for value-signature grouping) and the one on why `research_facts = 0` is the
-right answer and not a bug.
-
-## Built for
-
-I built this as a take-home for Builders Studio / VSI — thanks for a prompt that
-was genuinely fun to build against.
+every call I made, including the ones that went against the obvious approach. If
+you only read two sections, read the one on signal aggregation (why I dropped
+pure embedding kNN for value-signature grouping) and the one on why
+`research_facts = 0` is the right answer and not a bug.
 
 ## Web app (added after first review)
 

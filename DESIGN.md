@@ -1,10 +1,10 @@
 # Design Notes
 
-Hey Michael — this is the part where I explain the *why*, not the *what*. The
-README and the code show you how the thing works; this is me walking you through
-the calls I made and the ones I went back and forth on. A few of them are
-deviations from your brief, and I'd rather tell you about those up front than
-have you find them and wonder if I noticed.
+This is the part where I explain the *why*, not the *what*. The README and the
+code show you how the thing works; this is me walking through the calls I made
+and the ones I went back and forth on. A few of them go against the obvious
+approach, and I'd rather say so up front than have you find them and wonder if I
+noticed.
 
 I've tried to keep each section to a couple of paragraphs. Read it in one sitting
 and you'll know everything I'd tell you if we were looking at the repo together.
@@ -137,18 +137,18 @@ where it pays; use a JS pass where it doesn't.
 
 ## 6. Signal aggregation: value-signature grouping
 
-This is the deviation I'd most expect you to push on, so let me show my work. Your
-brief said to cluster with embedding kNN at a 0.80 threshold, and predicted it'd
-"naturally split runway facts by value." I built exactly that first. On the real
-embeddings it did the opposite of what we both expected: the six `runway:months`
+This is the call I'd most expect someone to push on, so let me show my work. The
+obvious move is to cluster with embedding kNN at a 0.80 threshold, on the theory
+that distance will "naturally split runway facts by value." I built exactly that
+first. On the real embeddings it did the opposite: the six `runway:months`
 facts were similar enough to each other that they collapsed into a *single*
 cluster — which then promoted straight to `decision_grade` on sheer volume and
 buried the 18-vs-9 contradiction completely — while the ICP and budget facts came
 in *under* 0.80 and shattered into singletons. I stared at it for a while. There's
 no single threshold that's loose enough to merge "budget objection at Acme" with
 "budget objection at Brightway" and also tight enough to keep "18 months" apart
-from "9 months." The embeddings just don't separate the way the brief assumed they
-would.
+from "9 months." The embeddings just don't separate the way embedding distance
+assumes they would.
 
 So I switched the cluster key. Instead of fuzzy distance, I group on
 `(predicate-family, value-signature)`. `runway:months` splits on `(value,
@@ -428,8 +428,8 @@ shows as decision_grade, E4 as validated, E3 as emerging, E1 and E2 as candidate
 It's a display choice, not a change to the model. A fact's tier is still its tier
 in the database; the ladder is how that tier gets drawn.
 
-This is built for the brief, not for an org's Monday morning. If it were going
-live, here's what I'd do next, roughly in order:
+This is built as a demonstration, not for an org's Monday morning. If it were
+going live, here's what I'd do next, roughly in order:
 
 - Replace bcrypt-on-Postgres with SSO through an identity provider. Hand-rolled
   login is fine for three demo accounts; it's not how a real company manages who
@@ -453,5 +453,5 @@ live, here's what I'd do next, roughly in order:
 - Validate input with a schema library instead of by hand. The Server Actions
   parse FormData manually; Zod at the boundary would be tighter.
 
-None of these are hard. They're just not what the brief asked for, and I'd rather
-ship the thing it asked for and know exactly what's missing.
+None of these are hard. They're just outside the scope I set for myself, and I'd
+rather ship that scope properly and know exactly what's missing.
