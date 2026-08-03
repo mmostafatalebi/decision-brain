@@ -30,6 +30,82 @@ are cited briefs you approve or reject, appended for keeps. You talk to it over 
 the line it won't cross: it recommends, it never acts. Every recommendation sits
 as a pending decision until a human finalizes it.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph WRITE["Write path"]
+        A["Raw items<br/>calls · emails · notes · docs"] --> B["EXTRACT<br/><i>model call 1</i>"]
+        B --> G1{"Gate 1<br/>verbatim quote<br/>must match source"}
+        G1 -->|"passes"| C["Deterministic core<br/>entity resolution · aggregation<br/>contradiction detection"]
+        G1 -.->|"fails"| X["rejected,<br/>never enters memory"]
+        C --> DB[("PostgreSQL + pgvector<br/>learnings · signals · decisions")]
+    end
+
+    subgraph READ["Read path"]
+        Q["Question<br/>from a user or an agent"] --> R["RETRIEVE<br/>deterministic SQL + vector"]
+        R --> S["SYNTHESIS<br/><i>model call 2</i>"]
+        S --> G2{"Gate 2<br/>every citation<br/>must resolve"}
+        G2 -->|"passes"| O["Cited brief<br/>+ pending decision"]
+        G2 -.->|"fails"| Y["claim does not render"]
+    end
+
+    DB --> R
+
+    style B fill:#FFF4E6,stroke:#C05621
+    style S fill:#FFF4E6,stroke:#C05621
+    style G1 fill:#FFFFFF,stroke:#9AA5B1,stroke-dasharray: 4 3
+    style G2 fill:#FFFFFF,stroke:#9AA5B1,stroke-dasharray: 4 3
+    style X fill:#FFF5F5,stroke:#C53030
+    style Y fill:#FFF5F5,stroke:#C53030
+```
+
+Two model calls, two provenance gates, everything else deterministic.
+
+### Memory layers
+
+```mermaid
+flowchart LR
+    L["<b>LEARNINGS</b><br/>typed facts with a<br/>verbatim quote + evidence tier"]
+    S["<b>SIGNALS</b><br/>aggregated, grouped by<br/>value signature"]
+    D["<b>DECISIONS</b><br/>cited briefs, append-only,<br/>human-approved"]
+
+    L --> S --> D
+
+    subgraph LADDER["Promotion ladder — one way, never demotes"]
+        direction LR
+        c["candidate"] --> e["emerging"] --> v["validated"] --> dg["decision_grade"]
+    end
+
+    S -.-> LADDER
+
+    style dg fill:#FFF4E6,stroke:#C05621
+```
+
+### MCP surface
+
+```mermaid
+flowchart TB
+    CD["Assistant client<br/>(Claude Desktop, CLI, other agents)"]
+    MCP["MCP server (stdio)<br/>ask · query_facts · query_entities<br/>query_signals · get_contradictions<br/>ingest_items · log_decision"]
+    RBAC{"Role check<br/>at the data layer"}
+    CORE["Deterministic pipeline"]
+    DB[("PostgreSQL + pgvector")]
+
+    CD <--> MCP
+    MCP --> RBAC
+    RBAC -->|"permitted"| CORE
+    RBAC -.->|"denied"| REJ["rejected"]
+    CORE <--> DB
+
+    style MCP fill:#F0F4F8,stroke:#1a5490
+    style REJ fill:#FFF5F5,stroke:#C53030
+```
+
+The role check sits at the data layer, so an agent calling in over MCP is
+governed by the same permissions as a person clicking in the UI, and there's no
+way to duck it by hitting the API directly.
+
 ## Quick start
 
 Prerequisites: **Node 20+**, **pnpm**, **PostgreSQL 15+ with
